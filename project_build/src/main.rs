@@ -1,5 +1,5 @@
 use std::fs;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 fn main() {
     let args = std::env::args().collect::<Vec<String>>();
@@ -40,7 +40,8 @@ fn main() {
                 "-drive", "if=pflash,format=raw,readonly=on,file=ovmf/OVMF_VARS.fd",
                 "-drive", "format=raw,file=fat:rw:esp",
                 "-d", "int,cpu_reset",
-                "-D", "qemu.log"
+                "-D", "qemu.log",
+                "-monitor", "stdio"
             ]).status().unwrap().success() {
                 eprintln!("[!] Failed to run qemu-system-x86_64.");
             }
