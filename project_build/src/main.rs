@@ -6,8 +6,15 @@ fn main() {
 
     if args.contains(&String::from("--build")) || args.contains(&String::from("--run")) {
         println!("[*] Building bootloader...");
-        if !Command::new("cargo").args(&["build", "--package", "bootloader", "--target", "x86_64-unknown-uefi"]).status().unwrap().success() {
+        if !Command::new("cargo").args(&["build", "--package", "bootloader", "--config", "bootloader/config.toml"]).status().unwrap().success() {
             eprintln!("[!] Failed to build bootloader.");
+            return;
+        }
+
+        println!("[*] Building kernel...");
+        if !Command::new("cargo").args(&["build", "--package", "kernel", "--config", "kernel/config.toml"]).status().unwrap().success() {
+            eprintln!("[!] Failed to build kernel.");
+            return;
         }
 
         println!("[*] Preparing output folder...");
@@ -18,6 +25,11 @@ fn main() {
 
         if let Err(err) = fs::copy("target/x86_64-unknown-uefi/debug/bootloader.efi", "esp/EFI/BOOT/BOOTX64.EFI") {
             eprintln!("[!] Failed to move bootloader.efi to build output folder: {}", err);
+            return;
+        }
+
+        if let Err(err) = fs::copy("target/x86_64-unknown-groveos/debug/kernel", "esp/kernel.elf") {
+            eprintln!("[!] Failed to move kernel to build output folder: {}", err);
             return;
         }
 
