@@ -6,10 +6,12 @@ mod heap;
 mod page_table;
 
 use alloc::vec;
+use core::arch::asm;
 use goblin::elf::Elf;
 use goblin::elf::program_header::PT_LOAD;
 use log::info;
-use uefi::boot::{AllocateType, MemoryType};
+use uefi::boot::{AllocateType, MemoryType, PAGE_SIZE};
+use uefi::mem::memory_map::MemoryMap;
 use uefi::prelude::*;
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::proto::media::file::{File, FileAttribute, FileHandle, FileInfo, FileMode};
@@ -58,7 +60,32 @@ fn efi_main() -> Status {
 
     info!("Finished mapping kernel! Entry @ {:x}", elf.entry);
 
-    loop { }
+    let memory_map = boot::memory_map(MemoryType::LOADER_DATA).expect("Failed to grab current memory map");
+    let excluded_types = [
+        MemoryType::RESERVED,
+        MemoryType::UNUSABLE,
+        MemoryType::PAL_CODE,
+        MemoryType::PERSISTENT_MEMORY,
+    ];
+
+    for mem_descriptor in memory_map.entries() {
+        if excluded_types.contains(&mem_descriptor.ty) { continue; }
+
+        let virt_start = if mem_descriptor.virt_start == 0 { mem_descriptor.phys_start } else { mem_descriptor.virt_start };
+        for page in 0..mem_descriptor.page_count {
+            pml4.map_page(virt_start + page * PAGE_SIZE as u64, mem_descriptor.phys_start + page * PAGE_SIZE as u64, PageTable::PAGE_WRITE);
+        }
+    }
+
+    let kernel_entry: *const fn() = unsafe { core::mem::transmute(elf.entry) };
+
+    unsafe {
+        let ptr = pml4.as_ptr() as u64;
+        asm!("mov cr3, {}", in(reg) ptr);
+
+        (*kernel_entry)();
+    }
+
     Status::SUCCESS
 }
 
