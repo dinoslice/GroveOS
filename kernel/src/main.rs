@@ -3,9 +3,9 @@
 
 use core::panic::PanicInfo;
 
-#[unsafe(no_mangle)]
+#[unsafe(export_name = "_start")]
 pub fn kernel_main() {
-
+    loop {}
 }
 
 #[panic_handler]
