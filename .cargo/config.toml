@@ -1,0 +1,3 @@
+[alias]
+build-os = "run -p project_build -- --build"
+run-os = "run -p project_build -- --run"
