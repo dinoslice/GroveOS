@@ -1,5 +1,5 @@
 [workspace]
-members = ["kernel"]
+members = ["kernel", "project_build"]
 resolver = "3"
 
 [workspace.dependencies]
