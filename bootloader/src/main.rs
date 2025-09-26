@@ -6,11 +6,15 @@ mod heap;
 mod page_table;
 
 use alloc::vec;
+use goblin::elf::Elf;
+use goblin::elf::program_header::PT_LOAD;
 use log::info;
+use uefi::boot::{AllocateType, MemoryType, PAGE_SIZE};
 use uefi::prelude::*;
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::proto::media::file::{File, FileAttribute, FileHandle, FileInfo, FileMode};
 use uefi::proto::media::fs::SimpleFileSystem;
+use crate::page_table::PageTable;
 
 #[entry]
 fn efi_main() -> Status {
@@ -22,7 +26,32 @@ fn efi_main() -> Status {
     let mut buffer = vec![0u8; err.data().expect("Failed to get size of kernel info")];
     let info = kernel.get_info::<FileInfo>(&mut buffer).expect("Failed to get kernel info");
 
-    info!("[!] Allocated file info: {:#?}", info);
+    let mut kernel = kernel.into_regular_file().expect("Failed to get regular file handle");
+
+    let mut header = vec![0u8; info.file_size() as usize];
+    kernel.read(&mut header).expect("Failed to read kernel file");
+
+    let elf = Elf::parse(&header).expect("Failed to parse ELF file");
+
+    let mut pml4 = PageTable::new();
+
+    for phdr in elf.program_headers {
+        if phdr.p_type == PT_LOAD {
+            let pages = (phdr.p_memsz + 0x1000 - 1) / 0x1000;
+            let allocated_space = boot::allocate_pages(AllocateType::AnyPages, MemoryType::LOADER_DATA, pages as _).expect("Failed to allocate memory");
+
+            for i in 0..((phdr.p_memsz + 0x1000 - 1) / 0x1000) {
+                unsafe {
+                    header.as_ptr().offset(i as isize * 0x1000 + phdr.p_offset as isize)
+                        .copy_to_nonoverlapping(allocated_space.as_ptr().offset(i as isize * 0x1000), PAGE_SIZE);
+                }
+
+                pml4.map_page(phdr.p_vaddr + 1 * 0x1000, allocated_space.as_ptr() as u64 + i * 0x1000, PageTable::PAGE_WRITE);
+            }
+        }
+    }
+
+    info!("Finished mapping kernel! Entry @ {:x}", elf.entry);
 
     loop { }
     Status::SUCCESS

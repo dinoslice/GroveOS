@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+goblin = { version = "0.10.1", default-features = false, features = ["elf32", "elf64", "endian_fd"] }
 log = "0.4.28"
 uefi = { version = "0.35.0", features = ["logger", "panic_handler"] }
