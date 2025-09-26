@@ -23,7 +23,7 @@ impl PageTable {
         PageTable(inner)
     }
 
-    fn as_ptr(&self) -> *const u64 {
+    pub fn as_ptr(&self) -> *const u64 {
         self.0.as_ptr()
     }
 
