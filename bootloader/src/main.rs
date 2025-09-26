@@ -3,6 +3,7 @@
 extern crate alloc;
 
 mod heap;
+mod page_table;
 
 use alloc::vec;
 use log::info;
