@@ -9,7 +9,7 @@ use alloc::vec;
 use goblin::elf::Elf;
 use goblin::elf::program_header::PT_LOAD;
 use log::info;
-use uefi::boot::{AllocateType, MemoryType, PAGE_SIZE};
+use uefi::boot::{AllocateType, MemoryType};
 use uefi::prelude::*;
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::proto::media::file::{File, FileAttribute, FileHandle, FileInfo, FileMode};
@@ -40,13 +40,18 @@ fn efi_main() -> Status {
             let pages = (phdr.p_memsz + 0x1000 - 1) / 0x1000;
             let allocated_space = boot::allocate_pages(AllocateType::AnyPages, MemoryType::LOADER_DATA, pages as _).expect("Failed to allocate memory");
 
-            for i in 0..((phdr.p_memsz + 0x1000 - 1) / 0x1000) {
-                unsafe {
-                    header.as_ptr().offset(i as isize * 0x1000 + phdr.p_offset as isize)
-                        .copy_to_nonoverlapping(allocated_space.as_ptr().offset(i as isize * 0x1000), PAGE_SIZE);
-                }
+            if phdr.p_memsz > phdr.p_filesz {
+                let buffer = unsafe { core::slice::from_raw_parts_mut(allocated_space.as_ptr().add(phdr.p_filesz as usize), (phdr.p_memsz - phdr.p_filesz) as usize) };
+                buffer.fill(0);
+            }
 
-                pml4.map_page(phdr.p_vaddr + 1 * 0x1000, allocated_space.as_ptr() as u64 + i * 0x1000, PageTable::PAGE_WRITE);
+            unsafe {
+                header.as_ptr().offset(phdr.p_offset as isize)
+                    .copy_to_nonoverlapping(allocated_space.as_ptr(), phdr.p_filesz as usize);
+            }
+
+            for i in 0..((phdr.p_memsz + 0x1000 - 1) / 0x1000) {
+                pml4.map_page(phdr.p_vaddr + i * 0x1000, allocated_space.as_ptr() as u64 + i * 0x1000, PageTable::PAGE_WRITE);
             }
         }
     }
