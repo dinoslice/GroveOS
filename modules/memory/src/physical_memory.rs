@@ -5,7 +5,7 @@ pub type PhysAddr = u64;
 
 static mut PHYSICAL_ALLOCATOR: Option<PhysicalMemoryAllocator> = None;
 
-struct PhysicalMemoryAllocator {
+pub(crate) struct PhysicalMemoryAllocator {
     memory_bitmap: &'static mut [u8],
     page_ptr: usize,
 

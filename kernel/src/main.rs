@@ -11,6 +11,8 @@ pub extern "C" fn kernel_main() -> ! {
 
     framebuffer.fill(0);
 
+    memory::init_module(&boot_info);
+
     loop {}
 }
 

@@ -11,3 +11,4 @@ doctest = false
 
 [dependencies]
 common = { path = "../modules/common" }
+memory = { path = "../modules/memory" }
