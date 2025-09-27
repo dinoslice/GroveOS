@@ -5,7 +5,7 @@ use core::arch::asm;
 use core::panic::PanicInfo;
 
 #[unsafe(export_name = "_start")]
-pub fn kernel_main() {
+pub extern "C" fn kernel_main() -> ! {
     let boot_info = unsafe { BootInfo::load() } ;
     let framebuffer = boot_info.framebuffer();
 
