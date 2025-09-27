@@ -24,6 +24,10 @@ impl PageAllocator {
         todo!()
     }
 
+    pub fn install(&self) {
+        todo!()
+    }
+
     pub fn allocate_page(&mut self) -> MemoryResult<VirtAddr> {
         todo!()
     }
