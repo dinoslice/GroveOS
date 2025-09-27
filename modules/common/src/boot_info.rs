@@ -1,9 +1,14 @@
 use core::arch::asm;
+use uefi::boot;
+use uefi::mem::memory_map::MemoryMap;
 
 #[repr(C)]
 pub struct BootInfo {
     pub framebuffer_ptr: *mut u32,
     pub framebuffer_size: usize,
+
+    pub memory_bitmap_ptr: *mut u8,
+    pub memory_bitmap_size: usize,
 }
 
 impl BootInfo {
@@ -20,9 +25,39 @@ impl BootInfo {
             ).expect("Failed to get graphics protocol")
         };
 
+        let memory_map = memory_map(MemoryType::LOADER_DATA).expect("Failed to get memory map");
+        let mut mem_pages = 0;
+        let excluded_types = [
+            MemoryType::RESERVED,
+            MemoryType::UNUSABLE,
+            MemoryType::PAL_CODE,
+            MemoryType::PERSISTENT_MEMORY,
+        ];
+
+        for entry in memory_map.entries() {
+            if excluded_types.contains(&entry.ty) { continue; }
+
+            mem_pages += entry.page_count;
+        }
+
+        let bitmap_size = (mem_pages + 8 - 1) / 8;
+        let bitmap = allocate_pool(MemoryType::LOADER_DATA, bitmap_size as usize).expect("Failed to allocate memory for bitmap");
+
+        let bitmap_arr = unsafe { core::slice::from_raw_parts_mut(bitmap.as_ptr(), bitmap_size as usize) };
+        bitmap_arr.fill(0);
+        for entry in memory_map.entries() {
+            if entry.ty != MemoryType::LOADER_DATA { continue; }
+
+            let idx = entry.phys_start / 8;
+            let offset = entry.phys_start % 8;
+            bitmap_arr[idx as usize] |= 1 << offset;
+        }
+
         Self {
             framebuffer_ptr: graphics_protocol.frame_buffer().as_mut_ptr().cast(),
             framebuffer_size: graphics_protocol.current_mode_info().stride() * graphics_protocol.current_mode_info().resolution().1,
+            memory_bitmap_ptr: bitmap.as_ptr(),
+            memory_bitmap_size: bitmap_size as usize,
         }
     }
 
