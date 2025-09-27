@@ -1,5 +1,5 @@
 use common::BootInfo;
-use crate::MemoryResult;
+use crate::{MemoryError, MemoryResult};
 
 pub type PhysAddr = u64;
 
@@ -29,12 +29,22 @@ impl PhysicalMemoryAllocator {
     }
 
     pub fn get() -> MemoryResult<&'static mut PhysicalMemoryAllocator> {
-        todo!()
+        #[allow(static_mut_refs)]
+        unsafe {
+            if let Some(allocator) = PHYSICAL_ALLOCATOR.as_mut() {
+                Ok(allocator)
+            } else {
+                Err(MemoryError::PhysicalAllocatorNotInitialized)
+            }
+        }
     }
 
     /// This method will panic if `PhysicalMemoryAllocator::init` has not yet been called
     pub unsafe fn get_unchecked() -> &'static mut PhysicalMemoryAllocator {
-        todo!()
+        #[allow(static_mut_refs)]
+        unsafe {
+            PHYSICAL_ALLOCATOR.as_mut().expect("Physical memory allocator not initialized")
+        }
     }
 
     pub fn used_page_count(&self) -> usize {
