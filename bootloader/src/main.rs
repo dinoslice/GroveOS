@@ -17,6 +17,7 @@ use uefi::prelude::*;
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::proto::media::file::{File, FileAttribute, FileHandle, FileInfo, FileMode};
 use uefi::proto::media::fs::SimpleFileSystem;
+use crate::boot_info::BootInfo;
 use crate::page_table::PageTable;
 
 #[entry]
@@ -80,9 +81,13 @@ fn efi_main() -> Status {
 
     let kernel_entry: *const fn() = unsafe { core::mem::transmute(elf.entry) };
 
+    let boot_info = BootInfo::build();
+
     unsafe {
         let ptr = pml4.as_ptr() as u64;
         asm!("mov cr3, {}", in(reg) ptr);
+
+        boot_info.store();
 
         (*kernel_entry)();
     }
