@@ -84,6 +84,10 @@ fn efi_main() -> Status {
     let boot_info = BootInfo::build();
     boot_info.map_contents(&mut pml4);
 
+    let memory_map = unsafe {
+        boot::exit_boot_services(None)
+    };
+
     unsafe {
         let ptr = pml4.as_ptr() as u64;
         asm!("mov cr3, {}", in(reg) ptr);
