@@ -14,9 +14,18 @@ pub(crate) struct PhysicalMemoryAllocator {
 }
 
 impl PhysicalMemoryAllocator {
-    // TODO: build memory bitmap in BootInfo and use it here
     pub fn init(boot_info: &BootInfo) {
-        todo!()
+        let memory_bitmap = unsafe { core::slice::from_raw_parts_mut(boot_info.memory_bitmap_ptr, boot_info.memory_bitmap_size) };
+
+        unsafe {
+            PHYSICAL_ALLOCATOR = Some(Self {
+                memory_bitmap,
+                page_ptr: 0,
+
+                total_pages: boot_info.memory_size,
+                pages_in_use: boot_info.memory_used,
+            });
+        }
     }
 
     pub fn get() -> MemoryResult<&'static mut PhysicalMemoryAllocator> {
