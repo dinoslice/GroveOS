@@ -6,6 +6,7 @@ pub enum MemoryError {
     OutOfPhysicalMemory,
     RequestedAddressInUse,
     PageNotAllocated,
+    PhysicalAllocatorNotInitialized,
 }
 
 impl Display for MemoryError {
@@ -15,6 +16,7 @@ impl Display for MemoryError {
             MemoryError::OutOfPhysicalMemory => write!(f, "System is out of physical memory"),
             MemoryError::RequestedAddressInUse => write!(f, "Requested address is already in use"),
             MemoryError::PageNotAllocated => write!(f, "Cannot deallocate page because it is not allocated"),
+            MemoryError::PhysicalAllocatorNotInitialized => write!(f, "PhysicalMemoryAllocator::init has not been called yet"),
         }
     }
 }
