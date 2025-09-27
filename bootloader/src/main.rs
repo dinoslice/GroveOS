@@ -4,6 +4,7 @@ extern crate alloc;
 
 mod heap;
 mod page_table;
+mod boot_info;
 
 use alloc::vec;
 use core::arch::asm;
