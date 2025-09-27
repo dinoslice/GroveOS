@@ -60,8 +60,6 @@ fn efi_main() -> Status {
         }
     }
 
-    info!("Finished mapping kernel! Entry @ {:x}", elf.entry);
-
     let memory_map = boot::memory_map(MemoryType::LOADER_DATA).expect("Failed to grab current memory map");
     let excluded_types = [
         MemoryType::RESERVED,
@@ -79,7 +77,9 @@ fn efi_main() -> Status {
         }
     }
 
-    let kernel_entry: *const fn() = unsafe { core::mem::transmute(elf.entry) };
+    let kernel_entry: extern "C" fn() -> ! = unsafe { core::mem::transmute(elf.entry as *const ()) };
+
+    info!("Kernel entry @ {:x?}", kernel_entry);
 
     let boot_info = BootInfo::build();
     boot_info.map_contents(&mut pml4);
@@ -89,11 +89,9 @@ fn efi_main() -> Status {
         asm!("mov cr3, {}", in(reg) ptr);
 
         boot_info.store();
-
-        (*kernel_entry)();
     }
 
-    Status::SUCCESS
+    kernel_entry()
 }
 
 fn load_kernel() -> Option<FileHandle> {
