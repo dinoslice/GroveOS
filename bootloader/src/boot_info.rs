@@ -21,7 +21,7 @@ impl BootInfo {
 
         Self {
             framebuffer_ptr: graphics_protocol.frame_buffer().as_mut_ptr().cast(),
-            framebuffer_size: graphics_protocol.frame_buffer().size()
+            framebuffer_size: graphics_protocol.current_mode_info().stride() * graphics_protocol.current_mode_info().resolution().1,
         }
     }
 
