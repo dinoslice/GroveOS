@@ -12,6 +12,14 @@ impl PageTable {
         todo!()
     }
 
+    fn indices_of_addr(addr: VirtAddr) -> (usize, usize, usize, usize) {
+        todo!()
+    }
+
+    fn get_table_or_create(&mut self, idx: usize) -> PageTable {
+        todo!()
+    }
+
     pub fn map_page(&mut self, virt: VirtAddr, phys: PhysAddr) -> MemoryResult<()> {
         todo!()
     }
