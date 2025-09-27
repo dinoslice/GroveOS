@@ -1,7 +1,8 @@
 use core::arch::asm;
 use uefi::boot;
-use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams};
+use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams, PAGE_SIZE};
 use uefi::proto::console::gop::GraphicsOutput;
+use crate::page_table::PageTable;
 
 #[repr(C)]
 pub struct BootInfo {
@@ -22,6 +23,12 @@ impl BootInfo {
         Self {
             framebuffer_ptr: graphics_protocol.frame_buffer().as_mut_ptr().cast(),
             framebuffer_size: graphics_protocol.current_mode_info().stride() * graphics_protocol.current_mode_info().resolution().1,
+        }
+    }
+
+    pub fn map_contents(&self, pml4: &mut PageTable) {
+        for page in 0..((self.framebuffer_size * size_of::<u32>() + 0x1000 - 1) / 0x1000) as u64 {
+            pml4.map_page(self.framebuffer_ptr as u64 + page * PAGE_SIZE as u64, self.framebuffer_ptr as u64 + page * PAGE_SIZE as u64, PageTable::PAGE_WRITE);
         }
     }
 

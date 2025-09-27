@@ -82,6 +82,7 @@ fn efi_main() -> Status {
     let kernel_entry: *const fn() = unsafe { core::mem::transmute(elf.entry) };
 
     let boot_info = BootInfo::build();
+    boot_info.map_contents(&mut pml4);
 
     unsafe {
         let ptr = pml4.as_ptr() as u64;
