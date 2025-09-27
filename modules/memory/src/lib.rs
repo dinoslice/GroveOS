@@ -3,7 +3,6 @@
 mod virtual_memory;
 mod page_table;
 mod physical_memory;
-mod kernel;
 mod err;
 
 use common::BootInfo;
