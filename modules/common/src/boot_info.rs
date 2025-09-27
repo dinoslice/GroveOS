@@ -1,6 +1,4 @@
 use core::arch::asm;
-use uefi::boot;
-use uefi::mem::memory_map::MemoryMap;
 
 #[repr(C)]
 pub struct BootInfo {
@@ -17,6 +15,7 @@ impl BootInfo {
     #[cfg(feature = "uefi")]
     pub fn build() -> Self {
         use uefi::proto::console::gop::GraphicsOutput;
+        use uefi::mem::memory_map::MemoryMap;
         use uefi::boot::*;
 
         let graphics_handle = get_handle_for_protocol::<GraphicsOutput>().expect("Failed to get graphics handle");
