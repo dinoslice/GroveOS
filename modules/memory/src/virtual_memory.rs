@@ -5,6 +5,7 @@ pub type VirtAddr = *mut ();
 
 pub struct PageAllocator {
     pml4: PageTable,
+    current_page: usize,
 }
 
 impl PageAllocator {
