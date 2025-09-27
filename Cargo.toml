@@ -1,5 +1,5 @@
 [workspace]
-members = ["bootloader", "kernel", "project_build"]
+members = ["bootloader", "kernel", "modules/memory", "project_build"]
 resolver = "3"
 
 [workspace.dependencies]

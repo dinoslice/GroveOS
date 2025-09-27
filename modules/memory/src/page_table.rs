@@ -1,0 +1,1 @@
+pub struct PageTable(&'static mut [u64]);
