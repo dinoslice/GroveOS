@@ -28,6 +28,7 @@ impl PhysicalMemoryAllocator {
         }
     }
 
+    #[inline(always)]
     pub fn get() -> MemoryResult<&'static mut PhysicalMemoryAllocator> {
         #[allow(static_mut_refs)]
         unsafe {
@@ -40,6 +41,7 @@ impl PhysicalMemoryAllocator {
     }
 
     /// This method will panic if `PhysicalMemoryAllocator::init` has not yet been called
+    #[inline(always)]
     pub unsafe fn get_unchecked() -> &'static mut PhysicalMemoryAllocator {
         #[allow(static_mut_refs)]
         unsafe {
@@ -47,12 +49,14 @@ impl PhysicalMemoryAllocator {
         }
     }
 
+    #[inline(always)]
     pub fn used_page_count(&self) -> usize {
-        todo!()
+        self.pages_in_use
     }
 
+    #[inline(always)]
     pub fn free_page_count(&self) -> usize {
-        todo!()
+        self.total_pages - self.pages_in_use
     }
 
     pub fn allocate_page(&mut self) -> MemoryResult<PhysAddr> {
