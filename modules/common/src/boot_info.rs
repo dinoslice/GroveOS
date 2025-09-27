@@ -9,6 +9,8 @@ pub struct BootInfo {
 
     pub memory_bitmap_ptr: *mut u8,
     pub memory_bitmap_size: usize,
+    pub memory_size: usize,
+    pub memory_used: usize,
 }
 
 impl BootInfo {
@@ -45,12 +47,17 @@ impl BootInfo {
 
         let bitmap_arr = unsafe { core::slice::from_raw_parts_mut(bitmap.as_ptr(), bitmap_size as usize) };
         bitmap_arr.fill(0);
+
+        let mut used_pages = 0;
         for entry in memory_map.entries() {
             if entry.ty != MemoryType::LOADER_DATA { continue; }
 
-            let idx = entry.phys_start / 8;
-            let offset = entry.phys_start % 8;
-            bitmap_arr[idx as usize] |= 1 << offset;
+            used_pages += entry.page_count;
+            for page in 0..entry.page_count {
+                let idx = (entry.phys_start + page) / 8;
+                let offset = (entry.phys_start + page) % 8;
+                bitmap_arr[idx as usize] |= 1 << offset;
+            }
         }
 
         Self {
@@ -58,6 +65,8 @@ impl BootInfo {
             framebuffer_size: graphics_protocol.current_mode_info().stride() * graphics_protocol.current_mode_info().resolution().1,
             memory_bitmap_ptr: bitmap.as_ptr(),
             memory_bitmap_size: bitmap_size as usize,
+            memory_size: mem_pages as usize,
+            memory_used: used_pages as usize,
         }
     }
 
