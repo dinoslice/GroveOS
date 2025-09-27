@@ -4,3 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+uefi = { version = "0.35.0", optional = true }
+
+[features]
+default = ["alloc"]
+uefi = ["uefi/default"]
+alloc = []

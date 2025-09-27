@@ -4,7 +4,6 @@ extern crate alloc;
 
 mod heap;
 mod page_table;
-mod boot_info;
 
 use alloc::vec;
 use core::arch::asm;
@@ -17,7 +16,7 @@ use uefi::prelude::*;
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::proto::media::file::{File, FileAttribute, FileHandle, FileInfo, FileMode};
 use uefi::proto::media::fs::SimpleFileSystem;
-use crate::boot_info::BootInfo;
+use common::BootInfo;
 use crate::page_table::PageTable;
 
 #[entry]
@@ -82,7 +81,7 @@ fn efi_main() -> Status {
     info!("Kernel entry @ {:x?}", kernel_entry);
 
     let boot_info = BootInfo::build();
-    boot_info.map_contents(&mut pml4);
+    map_contents(&boot_info, &mut pml4);
 
     let memory_map = unsafe {
         boot::exit_boot_services(None)
@@ -105,4 +104,10 @@ fn load_kernel() -> Option<FileHandle> {
     let mut directory = fs.open_volume().ok()?;
 
     directory.open(cstr16!("kernel.elf"), FileMode::Read, FileAttribute::READ_ONLY).ok()
+}
+
+fn map_contents(boot_info: &BootInfo, pml4: &mut PageTable) {
+    for page in 0..((boot_info.framebuffer_size * size_of::<u32>() + 0x1000 - 1) / 0x1000) as u64 {
+        pml4.map_page(boot_info.framebuffer_ptr as u64 + page * PAGE_SIZE as u64, boot_info.framebuffer_ptr as u64 + page * PAGE_SIZE as u64, PageTable::PAGE_WRITE);
+    }
 }
