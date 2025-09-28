@@ -1,5 +1,6 @@
+use core::arch::asm;
 use crate::{MemoryResult, VirtAddr};
-use crate::physical_memory::PhysAddr;
+use crate::physical_memory::{PhysAddr, PhysicalMemoryAllocator};
 
 const RECURSIVE_ENTRY: usize = 510;
 
@@ -16,6 +17,12 @@ pub struct PageTable(&'static mut [u64]);
 impl PageTable {
     pub fn new() -> MemoryResult<Self> {
         todo!()
+    }
+
+    pub fn current() -> PageTable {
+        unsafe {
+            Self::get_page_table_unchecked(PT_LEVEL_PML4, &[])
+        }
     }
 
     pub fn install(&self) {
