@@ -15,6 +15,8 @@ impl PageTable {
     pub const PAGE_WRITE: u64 = 1 << 1;
     pub const EXECUTE_DISABLE: u64 = 1 << 63;
 
+    const PAGE_TABLE_FLAGS: u64 = Self::PAGE_PRESENT | Self::PAGE_WRITE;
+
     pub fn new() -> PageTable {
         let addr = boot::allocate_pages(AllocateType::AnyPages, MemoryType::LOADER_DATA, 1).expect("Failed to allocate page table");
 
@@ -34,7 +36,7 @@ impl PageTable {
             PageTable::from(other as *mut u8)
         } else {
             let other = PageTable::new();
-            self.0[idx] = other.as_ptr() as u64 | Self::PAGE_PRESENT;
+            self.0[idx] = other.as_ptr() as u64 | Self::PAGE_TABLE_FLAGS;
             other
         }
     }
