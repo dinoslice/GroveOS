@@ -1,5 +1,5 @@
 use crate::physical_memory::{PhysAddr, PhysicalMemoryAllocator};
-use crate::{MemoryError, MemoryResult, PageAllocator, VirtAddr};
+use crate::{MemoryResult, PageAllocator, VirtAddr};
 use core::arch::asm;
 
 const RECURSIVE_ENTRY: usize = 510;
@@ -96,7 +96,12 @@ impl PageTable {
     }
 
     pub fn map_page(&mut self, virt: VirtAddr, phys: PhysAddr) -> MemoryResult<()> {
-        todo!()
+        let (pml4_i, pdpt_i, pd_i, pt_i) = Self::indices_of_addr(virt);
+
+        let pt = self.get_table_or_create(&[pml4_i, pdpt_i, pd_i])?;
+        pt.0[pt_i] = (phys & !0xFFF) | PT_PAGE_PRESENT | PT_PAGE_WRITE;
+
+        Ok(())
     }
 
     pub fn unmap_page(&mut self, virt: VirtAddr) -> MemoryResult<()> {
