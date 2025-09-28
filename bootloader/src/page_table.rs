@@ -13,6 +13,7 @@ pub struct PageTable(&'static mut [u64]);
 impl PageTable {
     pub const PAGE_PRESENT: u64 = 1 << 0;
     pub const PAGE_WRITE: u64 = 1 << 1;
+    pub const EXECUTE_DISABLE: u64 = 1 << 63;
 
     pub fn new() -> PageTable {
         let addr = boot::allocate_pages(AllocateType::AnyPages, MemoryType::LOADER_DATA, 1).expect("Failed to allocate page table");

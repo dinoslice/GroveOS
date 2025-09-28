@@ -8,7 +8,7 @@ mod page_table;
 use alloc::vec;
 use core::arch::asm;
 use goblin::elf::Elf;
-use goblin::elf::program_header::PT_LOAD;
+use goblin::elf::program_header::{PF_R, PF_W, PF_X, PT_LOAD};
 use log::info;
 use uefi::boot::{AllocateType, MemoryType, PAGE_SIZE};
 use uefi::mem::memory_map::MemoryMap;
@@ -53,8 +53,17 @@ fn efi_main() -> Status {
                     .copy_to_nonoverlapping(allocated_space.as_ptr(), phdr.p_filesz as usize);
             }
 
+            let mut flag = 0;
+            if phdr.p_flags & PF_W != 0 {
+                flag |= PageTable::PAGE_WRITE;
+            }
+
+            if phdr.p_flags & PF_X == 0 {
+                flag |= PageTable::EXECUTE_DISABLE;
+            }
+
             for i in 0..((phdr.p_memsz + 0x1000 - 1) / 0x1000) {
-                pml4.map_page(phdr.p_vaddr + i * 0x1000, allocated_space.as_ptr() as u64 + i * 0x1000, PageTable::PAGE_WRITE);
+                pml4.map_page(phdr.p_vaddr + i * 0x1000, allocated_space.as_ptr() as u64 + i * 0x1000, flag);
             }
         }
     }
