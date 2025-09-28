@@ -52,9 +52,10 @@ impl BootInfo {
             if entry.ty != MemoryType::LOADER_DATA { continue; }
 
             used_pages += entry.page_count;
+            let phys_start = entry.phys_start >> 12;
             for page in 0..entry.page_count {
-                let idx = (entry.phys_start + page) / 8;
-                let offset = (entry.phys_start + page) % 8;
+                let idx = (phys_start + page) / 8;
+                let offset = (phys_start + page) % 8;
                 bitmap_arr[idx as usize] |= 1 << offset;
             }
         }
