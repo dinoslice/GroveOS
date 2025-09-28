@@ -98,7 +98,7 @@ impl PhysicalMemoryAllocator {
         self.set_used(self.page_ptr, true);
         self.page_ptr += 1;
 
-        Ok(self.page_ptr - 1)
+        Ok(self.page_ptr - 1 * 0x1000)
     }
 
     pub fn deallocate_page(&mut self, addr: PhysAddr) -> MemoryResult<()> {
@@ -106,8 +106,8 @@ impl PhysicalMemoryAllocator {
             Err(MemoryError::PageNotAllocated)
         } else {
             self.set_used(addr, false);
-            if self.page_ptr > addr {
-                self.page_ptr = addr;
+            if self.page_ptr > addr >> 12 {
+                self.page_ptr = addr >> 12;
             }
 
             Ok(())
