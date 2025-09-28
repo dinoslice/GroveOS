@@ -15,7 +15,7 @@ impl PageAllocator {
     pub fn new() -> MemoryResult<Self> {
         Ok(Self {
             pml4: PageTable::new()?,
-            current_page: 0,
+            current_page: 1,
         })
     }
 
@@ -37,6 +37,15 @@ impl PageAllocator {
 
     pub fn install(&self) {
         self.pml4.install();
+    }
+
+    pub(crate) fn init() {
+        unsafe {
+            KERNEL_ALLOCATOR = Some(Self {
+                pml4: PageTable::current(),
+                current_page: 1,
+            })
+        }
     }
 
     pub fn allocate_page(&mut self) -> MemoryResult<VirtAddr> {
