@@ -73,7 +73,15 @@ impl PageAllocator {
     }
 
     pub fn allocate_page_at(&mut self, address: VirtAddr) -> MemoryResult<VirtAddr> {
-        todo!()
+        if self.pml4.is_mapped(address) {
+            Err(MemoryError::RequestedAddressInUse)
+        } else {
+            let addr = PhysicalMemoryAllocator::get()?.allocate_page()?;
+
+            self.pml4.map_page(address, addr)?;
+
+            Ok(address)
+        }
     }
 
     pub fn allocate_pages_at(&mut self, address: VirtAddr, count: usize) -> MemoryResult<VirtAddr> {
