@@ -69,7 +69,36 @@ impl PageAllocator {
     }
 
     pub fn allocate_pages(&mut self, count: usize) -> MemoryResult<VirtAddr> {
-        todo!()
+        let phys_allocator = PhysicalMemoryAllocator::get()?;
+
+        loop {
+            while self.pml4.is_mapped((self.current_page * 0x1000) as VirtAddr) {
+                self.current_page += 1;
+                if self.current_page == usize::MAX {
+                    self.current_page = 1;
+                    return Err(MemoryError::OutOfVirtualMemory)
+                }
+            }
+
+            for i in 0..count {
+                if self.pml4.is_mapped(((self.current_page + i) * 0x1000) as VirtAddr) {
+                    continue;
+                }
+            }
+
+            let base = self.current_page;
+
+            for i in 0..count {
+                let addr = phys_allocator.allocate_page()?;
+                let vaddr = (self.current_page + i) * 0x1000;
+
+                self.pml4.map_page(vaddr as VirtAddr, addr)?;
+            }
+
+            self.current_page += count;
+
+            return Ok(base as VirtAddr)
+        }
     }
 
     pub fn allocate_page_at(&mut self, address: VirtAddr) -> MemoryResult<VirtAddr> {
