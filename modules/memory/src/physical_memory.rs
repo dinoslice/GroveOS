@@ -7,7 +7,7 @@ static mut PHYSICAL_ALLOCATOR: Option<PhysicalMemoryAllocator> = None;
 
 pub(crate) struct PhysicalMemoryAllocator {
     memory_bitmap: &'static mut [u8],
-    page_ptr: usize,
+    page_ptr: PhysAddr,
 
     total_pages: usize,
     pages_in_use: usize,
@@ -57,6 +57,26 @@ impl PhysicalMemoryAllocator {
     #[inline(always)]
     pub fn free_page_count(&self) -> usize {
         self.total_pages - self.pages_in_use
+    }
+
+    #[inline(always)]
+    fn is_free(&self, addr: PhysAddr) -> bool {
+        let idx = (addr >> 12) / 8;
+        let offset = addr % 8;
+
+        self.memory_bitmap[idx as usize] & (1 << offset) != 0
+    }
+
+    #[inline(always)]
+    fn set_used(&mut self, addr: PhysAddr, used: bool) {
+        let idx = (addr >> 12) / 8;
+        let offset = addr % 8;
+
+        if used {
+            self.memory_bitmap[idx as usize] |= 1 << offset;
+        } else {
+            self.memory_bitmap[idx as usize] &= !(1 << offset);
+        }
     }
 
     pub fn allocate_page(&mut self) -> MemoryResult<PhysAddr> {
