@@ -110,4 +110,9 @@ fn map_contents(boot_info: &BootInfo, pml4: &mut PageTable) {
     for page in 0..((boot_info.framebuffer_size * size_of::<u32>() + 0x1000 - 1) / 0x1000) as u64 {
         pml4.map_page(boot_info.framebuffer_ptr as u64 + page * PAGE_SIZE as u64, boot_info.framebuffer_ptr as u64 + page * PAGE_SIZE as u64, PageTable::PAGE_WRITE);
     }
+
+    let start = boot_info.memory_bitmap_ptr as usize;
+    for page in 0..boot_info.memory_size / (8 * PAGE_SIZE) {
+        pml4.map_page((start + page * PAGE_SIZE) as u64, (start + page * PAGE_SIZE) as u64, PageTable::PAGE_WRITE);
+    }
 }
