@@ -62,7 +62,7 @@ fn efi_main() -> Status {
                 flag |= PageTable::EXECUTE_DISABLE;
             }
 
-            for i in 0..((phdr.p_memsz + 0x1000 - 1) / 0x1000) {
+            for i in 0..pages {
                 pml4.map_page(phdr.p_vaddr + i * 0x1000, allocated_space.as_ptr() as u64 + i * 0x1000, flag);
             }
         }
