@@ -55,7 +55,6 @@ impl PageTable {
         assert!(indices.len() <= 3);
 
         let mut table = PageTable(unsafe { core::slice::from_raw_parts_mut(self.0.as_ptr() as *mut _, 512) });
-        let level = 3 - indices.len();
 
         for (i, index) in indices.iter().enumerate() {
             if table.0[*index] & PT_PAGE_PRESENT == 0 {
@@ -63,13 +62,13 @@ impl PageTable {
 
                 table.0[*index] = addr | PT_PAGE_PRESENT | PT_PAGE_WRITE;
 
-                table = unsafe { Self::get_page_table_unchecked(level - i, &indices[..i]) };
+                table = unsafe { Self::get_page_table_unchecked(3 - i, &indices[..i]) };
                 table.0.fill(0);
 
                 continue;
             }
 
-            unsafe { table = Self::get_page_table_unchecked(level - i, &indices[..i]); }
+            unsafe { table = Self::get_page_table_unchecked(3 - i, &indices[..i]); }
         }
 
         Ok(table)
