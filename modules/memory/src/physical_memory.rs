@@ -80,7 +80,25 @@ impl PhysicalMemoryAllocator {
     }
 
     pub fn allocate_page(&mut self) -> MemoryResult<PhysAddr> {
-        todo!()
+        'outer: while !self.is_free(self.page_ptr) {
+            self.page_ptr += 1;
+
+            if self.page_ptr >= self.total_pages as u64 {
+                for b in self.memory_bitmap.iter() {
+                    if *b != u8::MAX {
+                        self.page_ptr = 0;
+                        continue 'outer;
+                    }
+                }
+
+                return Err(MemoryError::OutOfPhysicalMemory);
+            }
+        }
+
+        self.set_used(self.page_ptr, true);
+        self.page_ptr += 1;
+
+        Ok(self.page_ptr - 1)
     }
 
     pub fn deallocate_page(&mut self, addr: PhysAddr) -> MemoryResult<()> {
