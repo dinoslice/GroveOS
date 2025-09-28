@@ -52,15 +52,27 @@ impl PageTable {
     }
 
     fn get_table_or_create(&mut self, indices: &[usize]) -> MemoryResult<PageTable> {
-        if let Some(table) = self.get_page_table(indices) {
-            Ok(table)
-        } else {
-            let addr = PhysicalMemoryAllocator::get()?.allocate_page()?;
-            let higher = self.get_page_table(&indices[..indices.len() - 1]).ok_or(MemoryError::PageNotAllocated)?;
-            higher.0[*indices.last().expect("index empty")] = addr | PT_PAGE_PRESENT | PT_PAGE_WRITE;
+        assert!(indices.len() <= 3);
 
-            Ok(self.get_page_table(indices).expect("should be mapped"))
+        let mut table = PageTable(unsafe { core::slice::from_raw_parts_mut(self.0.as_ptr() as *mut _, 512) });
+        let level = 3 - indices.len();
+
+        for (i, index) in indices.iter().enumerate() {
+            if table.0[*index] & PT_PAGE_PRESENT == 0 {
+                let addr = PhysicalMemoryAllocator::get()?.allocate_page()?;
+
+                table.0[*index] = addr | PT_PAGE_PRESENT | PT_PAGE_WRITE;
+
+                table = unsafe { Self::get_page_table_unchecked(level - i, &indices[..i]) };
+                table.0.fill(0);
+
+                continue;
+            }
+
+            unsafe { table = Self::get_page_table_unchecked(level - i, &indices[..i]); }
         }
+
+        Ok(table)
     }
 
     /// This function assumes that the requested page table is located in the overall page table structure
@@ -81,25 +93,6 @@ impl PageTable {
         unsafe {
             Self(core::slice::from_raw_parts_mut(addr as *mut u64, 512))
         }
-    }
-
-    fn get_page_table(&self, indices: &[usize]) -> Option<PageTable> {
-        assert!(indices.len() <= 3);
-
-        let mut table = PageTable(unsafe { core::slice::from_raw_parts_mut(self.0.as_ptr() as *mut _, 512) });
-        let level = 3 - indices.len();
-
-        for (i, index) in indices.iter().enumerate() {
-            if table.0[*index] & PT_PAGE_PRESENT == 0 {
-                return None;
-            } else {
-                unsafe {
-                    table = Self::get_page_table_unchecked(level - i, &indices[..i]);
-                }
-            }
-        }
-
-        Some(table)
     }
 
     pub fn map_page(&mut self, virt: VirtAddr, phys: PhysAddr) -> MemoryResult<()> {
