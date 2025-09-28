@@ -80,7 +80,7 @@ impl PhysicalMemoryAllocator {
     }
 
     pub fn allocate_page(&mut self) -> MemoryResult<PhysAddr> {
-        'outer: while !self.is_free(self.page_ptr) {
+        'outer: while !self.is_free(self.page_ptr << 12) {
             self.page_ptr += 1;
 
             if self.page_ptr >= self.total_pages as u64 {
@@ -102,6 +102,15 @@ impl PhysicalMemoryAllocator {
     }
 
     pub fn deallocate_page(&mut self, addr: PhysAddr) -> MemoryResult<()> {
-        todo!()
+        if self.is_free(addr) {
+            Err(MemoryError::PageNotAllocated)
+        } else {
+            self.set_used(addr, false);
+            if self.page_ptr > addr {
+                self.page_ptr = addr;
+            }
+
+            Ok(())
+        }
     }
 }
