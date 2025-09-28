@@ -13,7 +13,14 @@ pub struct BootInfo {
 
 impl BootInfo {
     #[cfg(feature = "uefi")]
-    pub fn build() -> Self {
+    #[inline(always)]
+    pub fn allocate() -> &'static mut Self {
+        let ptr = uefi::boot::allocate_pool(uefi::boot::MemoryType::LOADER_DATA, size_of::<Self>()).expect("Failed to allocate boot info");
+        unsafe { &mut *(ptr.cast::<Self>().as_ptr()) }
+    }
+
+    #[cfg(feature = "uefi")]
+    pub fn build(&mut self) {
         use uefi::proto::console::gop::GraphicsOutput;
         use uefi::mem::memory_map::MemoryMap;
         use uefi::boot::*;
@@ -25,6 +32,9 @@ impl BootInfo {
                 OpenProtocolAttributes::GetProtocol
             ).expect("Failed to get graphics protocol")
         };
+
+        self.framebuffer_ptr = graphics_protocol.frame_buffer().as_mut_ptr() as *mut u32;
+        self.framebuffer_size = graphics_protocol.frame_buffer().size() / size_of::<u32>();
 
         let memory_map = memory_map(MemoryType::LOADER_DATA).expect("Failed to get memory map");
         let mut mem_pages = 0;
@@ -60,23 +70,21 @@ impl BootInfo {
             }
         }
 
-        Self {
-            framebuffer_ptr: graphics_protocol.frame_buffer().as_mut_ptr().cast(),
-            framebuffer_size: graphics_protocol.frame_buffer().size() / size_of::<u32>(),
-            memory_bitmap_ptr: bitmap.as_ptr(),
-            memory_bitmap_size: bitmap_size as usize,
-            memory_size: mem_pages as usize,
-            memory_used: used_pages as usize,
-        }
+        self.memory_bitmap_ptr = bitmap.as_ptr();
+        self.memory_bitmap_size = bitmap_size as usize;
+        self.memory_size = mem_pages as usize;
+        self.memory_used = used_pages as usize;
     }
 
     #[cfg(feature = "uefi")]
+    #[inline(always)]
     pub fn store(&self) {
         unsafe {
             asm!("mov rdi, {boot_info}", boot_info = in(reg) self as *const BootInfo);
         }
     }
 
+    #[inline(always)]
     pub unsafe fn load() -> Self {
         let ptr = unsafe {
             let rdi: u64;

@@ -8,7 +8,7 @@ mod page_table;
 use alloc::vec;
 use core::arch::asm;
 use goblin::elf::Elf;
-use goblin::elf::program_header::{PF_R, PF_W, PF_X, PT_LOAD};
+use goblin::elf::program_header::{PF_W, PF_X, PT_LOAD};
 use log::info;
 use uefi::boot::{AllocateType, MemoryType, PAGE_SIZE};
 use uefi::mem::memory_map::MemoryMap;
@@ -68,6 +68,8 @@ fn efi_main() -> Status {
         }
     }
 
+    let boot_info = BootInfo::allocate();
+
     let memory_map = boot::memory_map(MemoryType::LOADER_DATA).expect("Failed to grab current memory map");
     let excluded_types = [
         MemoryType::RESERVED,
@@ -89,10 +91,10 @@ fn efi_main() -> Status {
 
     info!("Kernel entry @ {:x?}", kernel_entry);
 
-    let boot_info = BootInfo::build();
+    boot_info.build();
     map_contents(&boot_info, &mut pml4);
 
-    let memory_map = unsafe {
+    let _ = unsafe {
         boot::exit_boot_services(None)
     };
 
