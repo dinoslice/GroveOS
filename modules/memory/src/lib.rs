@@ -13,3 +13,17 @@ use crate::physical_memory::PhysicalMemoryAllocator;
 pub fn init_module(boot_info: &BootInfo) {
     PhysicalMemoryAllocator::init(boot_info);
 }
+
+pub fn free_page_count() -> MemoryResult<usize> {
+    let allocator = PhysicalMemoryAllocator::get()?;
+    Ok(allocator.free_page_count())
+}
+
+pub fn used_page_count() -> MemoryResult<usize> {
+    let allocator = PhysicalMemoryAllocator::get()?;
+    Ok(allocator.used_page_count())
+}
+
+pub fn total_page_count() -> MemoryResult<usize> {
+    Ok(free_page_count()? + used_page_count()?)
+}
