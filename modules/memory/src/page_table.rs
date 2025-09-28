@@ -1,5 +1,5 @@
-use crate::physical_memory::PhysAddr;
-use crate::{MemoryResult, PageAllocator, VirtAddr};
+use crate::physical_memory::{PhysAddr, PhysicalMemoryAllocator};
+use crate::{MemoryError, MemoryResult, PageAllocator, VirtAddr};
 use core::arch::asm;
 
 const RECURSIVE_ENTRY: usize = 510;
@@ -51,8 +51,16 @@ impl PageTable {
         )
     }
 
-    fn get_table_or_create(&mut self, idx: usize) -> PageTable {
-        todo!()
+    fn get_table_or_create(&mut self, indices: &[usize]) -> MemoryResult<PageTable> {
+        if let Some(table) = self.get_page_table(indices) {
+            Ok(table)
+        } else {
+            let addr = PhysicalMemoryAllocator::get()?.allocate_page()?;
+            let higher = self.get_page_table(&indices[..indices.len() - 1]).ok_or(MemoryError::PageNotAllocated)?;
+            higher.0[*indices.last().expect("index empty")] = addr | PT_PAGE_PRESENT | PT_PAGE_WRITE;
+
+            Ok(self.get_page_table(indices).expect("should be mapped"))
+        }
     }
 
     /// This function assumes that the requested page table is located in the overall page table structure
