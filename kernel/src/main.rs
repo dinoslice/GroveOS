@@ -24,8 +24,8 @@ pub extern "C" fn kernel_main() -> ! {
 
     memory::init_module(boot_info());
 
-    let page = PageAllocator::kernel().unwrap().allocate_page().unwrap();
-    let a = unsafe { core::slice::from_raw_parts_mut(page.cast::<u8>(), 0x1000) };
+    let page = PageAllocator::kernel().unwrap().allocate_pages(4).unwrap();
+    let a = unsafe { core::slice::from_raw_parts_mut(page.cast::<u8>(), 0x4000) };
 
     unsafe {
         asm!("mov rax, {}", in(reg) page)

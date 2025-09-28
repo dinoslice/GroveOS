@@ -2,6 +2,8 @@ use crate::{MemoryError, MemoryResult};
 use crate::page_table::PageTable;
 use crate::physical_memory::PhysicalMemoryAllocator;
 
+// TODO: switch this allocator to a tree-like structure
+
 pub type VirtAddr = *mut ();
 
 static mut KERNEL_ALLOCATOR: Option<PageAllocator> = None;
