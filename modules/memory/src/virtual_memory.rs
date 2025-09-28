@@ -1,5 +1,6 @@
 use crate::{MemoryError, MemoryResult};
 use crate::page_table::PageTable;
+use crate::physical_memory::PhysicalMemoryAllocator;
 
 pub type VirtAddr = *mut ();
 
@@ -39,7 +40,13 @@ impl PageAllocator {
     }
 
     pub fn allocate_page(&mut self) -> MemoryResult<VirtAddr> {
-        todo!()
+        let addr = PhysicalMemoryAllocator::get()?.allocate_page()?;
+        let vaddr = self.current_page * 0x1000;
+        self.current_page += 1;
+
+        self.pml4.map_page(vaddr as VirtAddr, addr)?;
+
+        Ok(vaddr as VirtAddr)
     }
 
     pub fn allocate_pages(&mut self, count: usize) -> MemoryResult<VirtAddr> {
