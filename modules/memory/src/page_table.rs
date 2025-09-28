@@ -8,6 +8,9 @@ const PT_LEVEL_PDPT: u8 = 2;
 const PT_LEVEL_PD: u8 = 1;
 const PT_LEVEL_PT: u8 = 0;
 
+const PT_PAGE_PRESENT: u64 = 1;
+const PT_PAGE_WRITE: u64 = 2;
+
 pub struct PageTable(&'static mut [u64]);
 
 impl PageTable {
@@ -28,7 +31,7 @@ impl PageTable {
     }
 
     /// This function assumes that the requested page table is located in the overall page table structure
-    unsafe fn get_page_table(level: u8, indices: &[usize]) -> PageTable {
+    unsafe fn get_page_table_unchecked(level: u8, indices: &[usize]) -> PageTable {
         let mut addr = 0;
         let mut shift: u8 = 39;
 
@@ -45,6 +48,25 @@ impl PageTable {
         unsafe {
             Self(core::slice::from_raw_parts_mut(addr as *mut u64, 512))
         }
+    }
+
+    fn get_page_table(&self, indices: &[usize]) -> Option<PageTable> {
+        assert!(indices.len() <= 3);
+
+        let mut table = PageTable(unsafe { core::slice::from_raw_parts_mut(self.0.as_ptr() as *mut _, 512) });
+        let level = 3 - indices.len();
+
+        for (i, index) in indices.iter().enumerate() {
+            if table.0[*index] & PT_PAGE_PRESENT == 0 {
+                return None;
+            } else {
+                unsafe {
+                    table = Self::get_page_table_unchecked((level - i) as u8, &indices[..i]);
+                }
+            }
+        }
+
+        Some(table)
     }
 
     pub fn map_page(&mut self, virt: VirtAddr, phys: PhysAddr) -> MemoryResult<()> {
