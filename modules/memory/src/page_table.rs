@@ -90,6 +90,10 @@ impl PageTable {
             shift -= 9;
         }
 
+        if addr & (1 << 47) != 0 {
+            addr |= 0xFFFF_0000_0000_0000;
+        }
+
         unsafe {
             Self(core::slice::from_raw_parts_mut(addr as *mut u64, 512))
         }
