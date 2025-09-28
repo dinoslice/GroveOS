@@ -28,21 +28,21 @@ impl PageTable {
         self.0.as_ptr()
     }
 
-    fn get_or_allocate_table(&mut self, idx: usize, flags: u64) -> PageTable {
+    fn get_or_allocate_table(&mut self, idx: usize) -> PageTable {
         if self.0[idx] & Self::PAGE_PRESENT != 0 {
             let other = self.0[idx] & !0xFFF;
             PageTable::from(other as *mut u8)
         } else {
             let other = PageTable::new();
-            self.0[idx] = other.as_ptr() as u64 | flags;
+            self.0[idx] = other.as_ptr() as u64 | Self::PAGE_PRESENT;
             other
         }
     }
 
     pub fn map_page(&mut self, virt: u64, phys: u64, flags: u64) {
-        let mut pdpt = self.get_or_allocate_table(page_table_index!(virt, 3), flags | Self::PAGE_PRESENT);
-        let mut pd = pdpt.get_or_allocate_table(page_table_index!(virt, 2), flags | Self::PAGE_PRESENT);
-        let pt = pd.get_or_allocate_table(page_table_index!(virt, 1), flags | Self::PAGE_PRESENT);
+        let mut pdpt = self.get_or_allocate_table(page_table_index!(virt, 3));
+        let mut pd = pdpt.get_or_allocate_table(page_table_index!(virt, 2));
+        let pt = pd.get_or_allocate_table(page_table_index!(virt, 1));
 
         pt.0[page_table_index!(virt, 0)] = (phys & !0xFFF) | Self::PAGE_PRESENT | flags;
     }
