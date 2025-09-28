@@ -1,4 +1,4 @@
-use crate::MemoryResult;
+use crate::{MemoryError, MemoryResult};
 use crate::page_table::PageTable;
 
 pub type VirtAddr = *mut ();
@@ -12,20 +12,30 @@ pub struct PageAllocator {
 
 impl PageAllocator {
     pub fn new() -> MemoryResult<Self> {
-        todo!()
+        Ok(Self {
+            pml4: PageTable::new()?,
+            current_page: 0,
+        })
     }
 
     pub fn kernel() -> MemoryResult<&'static mut PageAllocator> {
-        todo!()
+        #[allow(static_mut_refs)]
+        unsafe {
+            if let Some(allocator) = KERNEL_ALLOCATOR.as_mut() {
+                Ok(allocator)
+            } else {
+                Err(MemoryError::PhysicalAllocatorNotInitialized)
+            }
+        }
     }
 
     /// This function panics if `memory::init_module` hasn't been called
     pub unsafe fn kernel_unchecked() -> &'static mut PageAllocator {
-        todo!()
+        Self::kernel().expect("memory module not initialized")
     }
 
     pub fn install(&self) {
-        todo!()
+        self.pml4.install();
     }
 
     pub fn allocate_page(&mut self) -> MemoryResult<VirtAddr> {
