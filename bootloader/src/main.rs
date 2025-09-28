@@ -38,7 +38,7 @@ fn efi_main() -> Status {
 
     let mut pml4 = PageTable::new();
 
-    pml4.map_page(510 << 39, pml4.as_ptr() as u64, PageTable::PAGE_PRESENT | PageTable::PAGE_WRITE);
+    pml4.recursive_map();
 
     for phdr in elf.program_headers {
         if phdr.p_type == PT_LOAD {

@@ -25,6 +25,10 @@ impl PageTable {
 
         PageTable(inner)
     }
+    
+    pub fn recursive_map(&mut self) {
+        self.0[510] = self.as_ptr() as u64 | Self::PAGE_PRESENT | Self::PAGE_WRITE;
+    }
 
     pub fn as_ptr(&self) -> *const u64 {
         self.0.as_ptr()
