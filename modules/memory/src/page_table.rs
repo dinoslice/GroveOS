@@ -1,13 +1,13 @@
-use core::arch::asm;
+use crate::physical_memory::PhysAddr;
 use crate::{MemoryResult, PageAllocator, VirtAddr};
-use crate::physical_memory::{PhysAddr, PhysicalMemoryAllocator};
+use core::arch::asm;
 
 const RECURSIVE_ENTRY: usize = 510;
 
-const PT_LEVEL_PML4: u8 = 3;
-const PT_LEVEL_PDPT: u8 = 2;
-const PT_LEVEL_PD: u8 = 1;
-const PT_LEVEL_PT: u8 = 0;
+const PT_LEVEL_PML4: usize = 3;
+const PT_LEVEL_PDPT: usize = 2;
+const PT_LEVEL_PD: usize = 1;
+const PT_LEVEL_PT: usize = 0;
 
 const PT_PAGE_PRESENT: u64 = 1;
 const PT_PAGE_WRITE: u64 = 2;
@@ -38,7 +38,17 @@ impl PageTable {
     }
 
     fn indices_of_addr(addr: VirtAddr) -> (usize, usize, usize, usize) {
-        todo!()
+        let vaddr = addr as usize;
+        const fn index(vaddr: usize, level: usize) -> usize {
+            (vaddr >> (12 + 9 * level)) & 0x1FF
+        }
+
+        (
+            index(vaddr, PT_LEVEL_PML4),
+            index(vaddr, PT_LEVEL_PDPT),
+            index(vaddr, PT_LEVEL_PD),
+            index(vaddr, PT_LEVEL_PT),
+        )
     }
 
     fn get_table_or_create(&mut self, idx: usize) -> PageTable {
@@ -46,7 +56,7 @@ impl PageTable {
     }
 
     /// This function assumes that the requested page table is located in the overall page table structure
-    unsafe fn get_page_table_unchecked(level: u8, indices: &[usize]) -> PageTable {
+    unsafe fn get_page_table_unchecked(level: usize, indices: &[usize]) -> PageTable {
         let mut addr = 0;
         let mut shift: u8 = 39;
 
@@ -76,7 +86,7 @@ impl PageTable {
                 return None;
             } else {
                 unsafe {
-                    table = Self::get_page_table_unchecked((level - i) as u8, &indices[..i]);
+                    table = Self::get_page_table_unchecked(level - i, &indices[..i]);
                 }
             }
         }
