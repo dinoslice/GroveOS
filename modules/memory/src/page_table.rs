@@ -1,5 +1,5 @@
 use core::arch::asm;
-use crate::{MemoryResult, VirtAddr};
+use crate::{MemoryResult, PageAllocator, VirtAddr};
 use crate::physical_memory::{PhysAddr, PhysicalMemoryAllocator};
 
 const RECURSIVE_ENTRY: usize = 510;
@@ -16,7 +16,13 @@ pub struct PageTable(&'static mut [u64]);
 
 impl PageTable {
     pub fn new() -> MemoryResult<Self> {
-        todo!()
+        let addr = PageAllocator::kernel()?.allocate_page()?.cast::<u64>();
+
+        unsafe {
+            addr.offset(RECURSIVE_ENTRY as isize).write(addr as u64);
+        }
+
+        Ok(Self(unsafe { core::slice::from_raw_parts_mut(addr, 512) }))
     }
 
     pub fn current() -> PageTable {
