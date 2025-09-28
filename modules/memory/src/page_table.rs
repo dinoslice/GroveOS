@@ -32,7 +32,9 @@ impl PageTable {
     }
 
     pub fn install(&self) {
-        todo!()
+        unsafe {
+            asm!("mov cr3, {}", in(reg) self.0.as_ptr());
+        }
     }
 
     fn indices_of_addr(addr: VirtAddr) -> (usize, usize, usize, usize) {
