@@ -1,5 +1,5 @@
 use crate::physical_memory::{PhysAddr, PhysicalMemoryAllocator};
-use crate::{MemoryResult, PageAllocator, VirtAddr};
+use crate::{MemoryError, MemoryResult, PageAllocator, VirtAddr};
 use core::arch::asm;
 
 const RECURSIVE_ENTRY: usize = 510;
@@ -107,7 +107,30 @@ impl PageTable {
         Ok(())
     }
 
+    pub fn is_mapped(&self, virt: VirtAddr) -> bool {
+        let mut table = PageTable(unsafe { core::slice::from_raw_parts_mut(self.0.as_ptr() as *mut _, 512) });
+        let (pml4, pdpt, pd, pt) = Self::indices_of_addr(virt);
+        let indices = [pml4, pdpt, pd];
+
+        for (i, index) in indices.iter().enumerate() {
+            if table.0[*index] & PT_PAGE_PRESENT == 0 {
+                return false;
+            }
+
+            unsafe { table = Self::get_page_table_unchecked(3 - i, &indices[..i]); }
+        }
+
+        table.0[pt] & PT_PAGE_PRESENT != 0
+    }
+
     pub fn unmap_page(&mut self, virt: VirtAddr) -> MemoryResult<()> {
-        todo!()
+        if !self.is_mapped(virt) {
+            Err(MemoryError::PageNotAllocated)
+        } else {
+            let (pml4, pdpt, pd, pt) = Self::indices_of_addr(virt);
+            let table = unsafe { Self::get_page_table_unchecked(PT_LEVEL_PT, &[pml4, pdpt, pd]) };
+            table.0[pt] = 0;
+            Ok(())
+        }
     }
 }
