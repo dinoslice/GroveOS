@@ -62,7 +62,7 @@ impl BootInfo {
 
         Self {
             framebuffer_ptr: graphics_protocol.frame_buffer().as_mut_ptr().cast(),
-            framebuffer_size: graphics_protocol.current_mode_info().stride() * graphics_protocol.current_mode_info().resolution().1,
+            framebuffer_size: graphics_protocol.frame_buffer().size() / size_of::<u32>(),
             memory_bitmap_ptr: bitmap.as_ptr(),
             memory_bitmap_size: bitmap_size as usize,
             memory_size: mem_pages as usize,
