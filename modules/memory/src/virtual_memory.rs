@@ -120,10 +120,19 @@ impl PageAllocator {
     }
 
     pub fn deallocate_page(&mut self, address: VirtAddr) -> MemoryResult<()> {
-        todo!()
+        if self.pml4.is_mapped(address) {
+            self.pml4.unmap_page(address)?;
+            Ok(())
+        } else {
+            Err(MemoryError::PageNotAllocated)
+        }
     }
 
     pub fn deallocate_pages(&mut self, address: VirtAddr, count: usize) -> MemoryResult<()> {
-        todo!()
+        for i in 0..count {
+            self.deallocate_page(address.wrapping_add(i * 0x1000))?;
+        }
+        
+        Ok(())
     }
 }
