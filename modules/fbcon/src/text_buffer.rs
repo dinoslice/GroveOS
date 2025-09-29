@@ -15,6 +15,11 @@ impl TextBuffer {
         }
     }
 
+    pub fn clear(&mut self) {
+        self.ptr.fill(0);
+        self.cursor = 0;
+    }
+
     pub fn resize(&mut self) {
         let curr_pages = self.ptr.len() / 0x1000;
         let new_pages = memory::PageAllocator::kernel().expect("failed to get kernel allocator").allocate_pages(curr_pages + 1).expect("failed to allocate pages");

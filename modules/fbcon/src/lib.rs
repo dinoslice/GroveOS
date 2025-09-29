@@ -2,3 +2,4 @@
 
 mod text_buffer;
 mod font;
+mod text_framebuffer;
