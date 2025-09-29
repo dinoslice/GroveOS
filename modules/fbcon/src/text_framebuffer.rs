@@ -1,11 +1,12 @@
 use core::fmt::Write;
-use crate::font::PSFFont;
+use common::BootInfo;
+use crate::font::{PSFFont, KERNEL_FONT};
 use crate::text_buffer::TextBuffer;
 
 pub struct TextFramebufferWriter {
     framebuffer: &'static mut [u32],
-    width: u32,
-    height: u32,
+    width: usize,
+    height: usize,
     
     font: &'static PSFFont<'static>,
     
@@ -17,6 +18,19 @@ pub struct TextFramebufferWriter {
 }
 
 impl TextFramebufferWriter {
+    pub fn init(boot_info: &BootInfo) -> Self {
+        Self {
+            framebuffer: unsafe { core::slice::from_raw_parts_mut(boot_info.framebuffer_ptr, boot_info.framebuffer_size) },
+            width: boot_info.framebuffer_width,
+            height: boot_info.framebuffer_height,
+            fg_color: 0xFFFF_FFFF,
+            bg_color: 0x0000_0000,
+            text_buffer: TextBuffer::new(),
+            start_line: 0,
+            font: &KERNEL_FONT,
+        }
+    }
+    
     pub fn clear(&mut self) {
         self.start_line = 0;
         self.text_buffer.clear();
@@ -62,18 +76,18 @@ impl TextFramebufferWriter {
             }
         }
         
-        for line in self.start_line..(self.start_line + (self.height / self.font.height) as usize) {
+        for line in self.start_line..(self.start_line + self.height / self.font.height as usize) {
             if let Some(line) = self.text_buffer.get_line(line) {
                 for char in line.chars() {
                     put_char(self.framebuffer, self.font, char, cursor_x, cursor_y, self.width as _, self.height as _, self.fg_color, self.bg_color);
                     cursor_x += 1;
                     
-                    if cursor_x >= (self.width / self.font.width) as usize {
+                    if cursor_x >= self.width / self.font.width as usize {
                         cursor_y += 1;
                         cursor_x = 0;
                     }
                     
-                    if cursor_y >= (self.height / self.font.height) as usize {
+                    if cursor_y >= self.height / self.font.height as usize {
                         return;
                     }
                 }
