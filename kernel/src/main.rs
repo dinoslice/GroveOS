@@ -40,8 +40,8 @@ pub extern "C" fn kernel_main() -> ! {
 }
 
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    boot_info().framebuffer().fill(0xFFFF0000);
+fn panic(info: &PanicInfo) -> ! {
+    println!("{}", info);
 
     loop {}
 }
