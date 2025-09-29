@@ -4,6 +4,7 @@ mod virtual_memory;
 mod page_table;
 mod physical_memory;
 mod err;
+mod virt;
 
 use common::BootInfo;
 pub use virtual_memory::*;
