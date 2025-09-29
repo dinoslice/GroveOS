@@ -4,6 +4,7 @@
 use core::arch::asm;
 use core::panic::PanicInfo;
 use common::BootInfo;
+use fbcon::println;
 use memory::PageAllocator;
 
 static mut BOOT_INFO: Option<BootInfo> = None;
@@ -23,6 +24,7 @@ pub extern "C" fn kernel_main() -> ! {
     framebuffer.fill(0);
 
     memory::init_module(boot_info());
+    fbcon::init_framebuffer(boot_info());
 
     let page = PageAllocator::kernel().unwrap().allocate_pages(4).unwrap();
     let a = unsafe { core::slice::from_raw_parts_mut(page.cast::<u8>(), 0x4000) };
@@ -30,6 +32,9 @@ pub extern "C" fn kernel_main() -> ! {
     unsafe {
         asm!("mov rax, {}", in(reg) page)
     }
+
+    println!("hello, world!");
+    println!("test multi-line\ntest multi-line 2");
 
     loop {}
 }
