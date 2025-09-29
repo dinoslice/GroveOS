@@ -4,6 +4,8 @@ use core::arch::asm;
 pub struct BootInfo {
     pub framebuffer_ptr: *mut u32,
     pub framebuffer_size: usize,
+    pub framebuffer_width: usize,
+    pub framebuffer_height: usize,
 
     pub memory_bitmap_ptr: *mut u8,
     pub memory_bitmap_size: usize,
@@ -35,6 +37,10 @@ impl BootInfo {
 
         self.framebuffer_ptr = graphics_protocol.frame_buffer().as_mut_ptr() as *mut u32;
         self.framebuffer_size = graphics_protocol.frame_buffer().size() / size_of::<u32>();
+
+        let (width, height) = graphics_protocol.current_mode_info().resolution();
+        self.framebuffer_width = width;
+        self.framebuffer_height = height;
 
         let memory_map = memory_map(MemoryType::LOADER_DATA).expect("Failed to get memory map");
         let mut mem_pages = 0;
