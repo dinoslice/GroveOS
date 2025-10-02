@@ -3,7 +3,7 @@ use crate::page_table::PageTable;
 use crate::virt::node::Node;
 
 pub struct NodeAllocator {
-    bitmap: [u8; 1280],
+    bitmap: [u8; 128],
     allocated_groups: u8,
 }
 
