@@ -90,11 +90,11 @@ impl PageAllocator {
         }
     }
 
-    pub fn allocate_page(&mut self) -> MemoryResult<VirtAddr> {
-        self.allocate_pages(1)
+    pub fn allocate_page(&mut self, memory_space: MemorySpace) -> MemoryResult<VirtAddr> {
+        self.allocate_pages(1, memory_space)
     }
 
-    pub fn allocate_pages(&mut self, pages: usize) -> MemoryResult<VirtAddr> {
+    pub fn allocate_pages(&mut self, pages: usize, memory_space: MemorySpace) -> MemoryResult<VirtAddr> {
         todo!()
     }
 
@@ -125,4 +125,9 @@ impl PageAllocator {
     pub fn edit_flags(&mut self, addr: VirtAddr, new_flags: u64) -> MemoryResult<()> {
         todo!()
     }
+}
+
+pub enum MemorySpace {
+    User,
+    Kernel,
 }
