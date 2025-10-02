@@ -1,3 +1,4 @@
+use core::ops::Range;
 use core::ptr::NonNull;
 
 pub enum Node {
@@ -25,6 +26,7 @@ impl PageRange {
     pub fn contains(&self, page: u64) -> bool {
         page >= self.start_page && page < self.end_page
     }
+    pub fn span(&self) -> u64 { self.end_page - self.start_page }
 }
 
 #[repr(u8)]

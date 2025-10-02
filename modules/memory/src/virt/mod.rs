@@ -1,5 +1,5 @@
 use core::ptr::NonNull;
-use crate::{MemoryResult, VirtAddr};
+use crate::{MemoryError, MemoryResult, VirtAddr};
 use crate::page_table::PageTable;
 use crate::physical_memory::PhysAddr;
 use crate::virt::node::{Node, NodeStatus, PageRange};
@@ -51,7 +51,7 @@ impl PageAllocator {
 
             let node_b = node_allocator.allocate().unwrap();
             node_b.write(Node::Leaf {
-                page_range: PageRange::new(0xFF00_0001_5, 0xFFFF_FFFF_F),
+                page_range: PageRange::new(0xFF00_0001_4, 0xFFFF_FFFF_F),
                 status: NodeStatus::Used
             });
 
@@ -95,7 +95,88 @@ impl PageAllocator {
     }
 
     pub fn allocate_pages(&mut self, pages: usize, memory_space: MemorySpace) -> MemoryResult<VirtAddr> {
-        todo!()
+        let root = match memory_space {
+            MemorySpace::User => self.user_root_node,
+            MemorySpace::Kernel => self.kernel_root_node,
+        };
+
+        fn look_for_free_node(node: &Node, pages: usize) -> Option<NonNull<Node>> {
+            match node {
+                Node::Branch { a: a_ptr, b: b_ptr, .. } => {
+                    let a = unsafe { a_ptr.as_ref() };
+                    let b = unsafe { b_ptr.as_ref() };
+
+                    match a {
+                        Node::Leaf { page_range, status } => {
+                            if status.can_use() {
+                                if page_range.span() as usize >= pages {
+                                    return Some(*a_ptr);
+                                }
+                            }
+                        },
+                        Node::Branch { .. } => {
+                            if let Some(node) = look_for_free_node(a, pages) {
+                                return Some(node);
+                            }
+                        }
+                    }
+
+                    match b {
+                        Node::Leaf { page_range, status } => {
+                            if status.can_use() {
+                                if page_range.span() as usize >= pages {
+                                    return Some(*b_ptr);
+                                }
+                            }
+                        },
+                        Node::Branch { .. } => {
+                            if let Some(node) = look_for_free_node(b, pages) {
+                                return Some(node);
+                            }
+                        }
+                    }
+
+                    None
+                },
+                _ => unreachable!()
+            }
+        }
+
+        let mut node_ptr = look_for_free_node(unsafe { root.as_ref() }, pages).ok_or(MemoryError::OutOfVirtualMemory)?;
+
+        let node = unsafe { node_ptr.as_mut() };
+
+        if let Node::Leaf { page_range, status } = node {
+            if page_range.span() as usize == pages {
+                *status = NodeStatus::Used;
+                return Ok((page_range.start_page * 0x1000) as _)
+            }
+
+            unsafe {
+                let new_node_a = self.node_allocator.allocate().unwrap();
+                new_node_a.write(Node::Leaf {
+                    page_range: PageRange::new(page_range.start_page, page_range.start_page + pages as u64),
+                    status: NodeStatus::Used,
+                });
+
+                let new_node_b = self.node_allocator.allocate().unwrap();
+                new_node_b.write(Node::Leaf {
+                    page_range: PageRange::new(page_range.start_page + pages as u64, page_range.end_page),
+                    status: NodeStatus::Free
+                });
+
+                let start = page_range.start_page * 0x1000;
+                node_ptr.write(Node::Branch {
+                    page_range: PageRange::new(page_range.start_page, page_range.end_page),
+                    a: new_node_a,
+                    b: new_node_b,
+                });
+
+                Ok(start as _)
+            }
+        } else {
+            Err(MemoryError::OutOfVirtualMemory)
+        }
     }
 
     pub fn allocate_page_at(&mut self, addr: VirtAddr) -> MemoryResult<VirtAddr> {
