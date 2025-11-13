@@ -36,12 +36,12 @@ pub extern "C" fn kernel_main() -> ! {
     println!("hello, world!");
     println!("test multi-line\ntest multi-line 2");
 
-    loop {}
+    common::halt();
 }
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
 
-    loop {}
+    common::halt();
 }
