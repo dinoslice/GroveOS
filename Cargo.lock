@@ -3,5 +3,12 @@
 version = 4
 
 [[package]]
-name = "groveos"
+name = "kernel"
+version = "0.1.0"
+dependencies = [
+ "test_module",
+]
+
+[[package]]
+name = "test_module"
 version = "0.1.0"

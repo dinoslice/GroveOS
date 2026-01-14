@@ -1,6 +1,13 @@
-[package]
-name = "groveos"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+default-members = [
+    "kernel",
+]
+members = [
+    "kernel",
+    "modules/test_module"
+]
 
-[dependencies]
+resolver = "2"
+
+[workspace.dependencies]
+test_module = { path = "modules/test_module" }
