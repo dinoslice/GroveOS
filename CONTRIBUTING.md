@@ -29,6 +29,8 @@ These are run on new PRs, so it's best to make sure that they pass on your code 
 Open a new PR requesting to merge your branch into main. Fill out the PR template to the best of your ability,
 describing what you changed and why.
 
+Make sure to link at least one issue to your PR that your PR will resolve.
+
 ## Wait for a Review
 
 After your PR is opened, wait for a maintainer to review your changes. We may request changes to your work, so be
