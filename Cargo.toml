@@ -1,14 +1,21 @@
 [workspace]
 default-members = [
-    "kernel",
+    "runner",
 ]
 members = [
     "bootloader",
     "kernel",
-    "modules/test_module"
+    "modules/test_module",
+    "runner",
 ]
 
 resolver = "2"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
 
 [workspace.dependencies]
 test_module = { path = "modules/test_module" }
