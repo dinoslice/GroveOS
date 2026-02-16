@@ -5,3 +5,19 @@ edition = "2024"
 
 [dependencies]
 test_module = { workspace = true }
+
+[[bin]]
+name = "kernel"
+path = "src/main.rs"
+test = false
+doctest = false
+bench = false
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[package.metadata.cargo-xbuild]
+memcpy = true

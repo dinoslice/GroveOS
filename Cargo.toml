@@ -3,6 +3,7 @@ default-members = [
     "kernel",
 ]
 members = [
+    "bootloader",
     "kernel",
     "modules/test_module"
 ]
